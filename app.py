@@ -82,11 +82,28 @@ st.markdown(get_main_css(), unsafe_allow_html=True)
 init_session()
 
 @st.cache_resource(show_spinner=False)
+def _start_api_server():
+    """Start FastAPI server as a subprocess — once per Streamlit process lifetime.
+    Works locally and on Streamlit Cloud (no separate terminal needed).
+    """
+    import subprocess, time, sys
+    proc = subprocess.Popen(
+        [sys.executable, "-m", "uvicorn", "api:app",
+         "--host", "127.0.0.1", "--port", "8000",
+         "--log-level", "error"],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+    time.sleep(2)   # Give it a moment to boot
+    return proc
+
+@st.cache_resource(show_spinner=False)
 def _init_db_once():
     """Run DB setup exactly once per server process — not on every rerun."""
     ensure_indexes()
     return True
 
+_start_api_server()
 _init_db_once()
 
 

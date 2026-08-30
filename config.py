@@ -6,21 +6,32 @@ Central configuration loaded from environment variables.
 import os
 from dotenv import load_dotenv
 
-# Load .env file
+# Load .env file (local development)
 load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
 
+# Also load from Streamlit secrets (Streamlit Cloud deployment)
+def _get_secret(key: str, default: str = "") -> str:
+    """Read from Streamlit secrets first, then env vars, then default."""
+    try:
+        import streamlit as st
+        val = st.secrets.get(key, "")
+        if val:
+            return str(val)
+    except Exception:
+        pass
+    return os.getenv(key, default)
 
 # ---------------------------------------------------------------------------
 # Environment
 # ---------------------------------------------------------------------------
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
-MONGODB_URI = os.getenv("MONGODB_URI", "mongodb://localhost:27017")
-DATABASE_NAME = os.getenv("DATABASE_NAME", "saathi_one")
+GEMINI_API_KEY = _get_secret("GEMINI_API_KEY")
+MONGODB_URI    = _get_secret("MONGODB_URI", "mongodb://localhost:27017")
+DATABASE_NAME  = _get_secret("DATABASE_NAME", "saathi_one")
 
 # ---------------------------------------------------------------------------
 # Groq API (Primary — fast, free, no quota)
 # ---------------------------------------------------------------------------
-GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
+GROQ_API_KEY = _get_secret("GROQ_API_KEY", "")
 GROQ_MODEL = "qwen/qwen3.8-27b"          # Supports tool calling — confirmed working
 GROQ_FALLBACK_MODEL = "qwen/qwen3.6-27b"  # Fallback
 
